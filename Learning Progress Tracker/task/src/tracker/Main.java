@@ -1,69 +1,68 @@
 package tracker;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class Main {
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
-
+        Statistics stats = new Statistics();
         System.out.println("Learning Progress Tracker");
         boolean quit = false;
         while (!quit) {
-            String input = scanner.nextLine().toLowerCase().trim();
-            switch (input) {
-                case "add students":
-                    addStudent();
-                    break;
-                case "exit":
+            String action = scanner.nextLine().toLowerCase().trim();
+            switch (action) {
+                case "add students" -> showSubMenu(action, "student credentials");
+                case "add points" -> showSubMenu(action, "an id and points");
+                case "find" -> showSubMenu(action, "an id");
+                case "statistics" -> stats.chooseStats();
+                case "exit" -> {
                     quit = true;
                     System.out.println("Bye!");
-                    break;
-                case "":
-                    System.out.println("No input.");
-                    break;
-                case "back":
-                    System.out.println("Enter 'exit' to exit the program");
-                    break;
-                case "list":
-                    showStudentsList();
-                    break;
-                case "add points":
-                    addPoints();
-                    break;
-                case "find":
-                    findStudent();
-                default:
-                    System.out.println("Unknown command!");
+                }
+                case "" -> System.out.println("No input.");
+                case "back" -> System.out.println("Enter 'exit' to exit the program");
+                case "list" -> showStudentsList();
+                default -> System.out.println("Unknown command!");
             }
         }
     }
 
-//    public static void showSubMenu(String info) {
-//
-//    }
-
-    static Scanner scanner = new Scanner(System.in);
-    static Map<Student, Courses> studentResultsMap = new HashMap<>();
-
-
-    public static void addStudent() {
-        System.out.println("Enter student credentials or 'back' to return:");
+    public static void showSubMenu(String action, String msg) {
         boolean quit = false;
+        System.out.println("Enter " + msg + " or 'back' to return:");
         int students = 0;
         while (!quit) {
-            String studentInput = scanner.nextLine().trim();
-            if ("back".equalsIgnoreCase(studentInput)) {
+            String input = scanner.nextLine().trim();
+            if ("back".equalsIgnoreCase(input)) {
                 quit = true;
             } else {
-                if (isPersonalDataValid(studentInput)) {
-                    System.out.println("The student has benn added.");
-                    students++;
+                switch (action) {
+                    case "add students" -> students += addStudent(input);
+                    case "add points" -> addPoints(input);
+                    case "find" -> findStudent(input);
+                    default -> throw new IllegalStateException("Unexpected value");
                 }
             }
         }
-        System.out.printf("Total %d students have been added.\n", students);
+        if ("add students".equals(action)) {
+            System.out.printf("Total %d students have been added.\n", students);
+        }
+    }
+
+    static Scanner scanner = new Scanner(System.in);
+    static Map<Student, Courses> studentsCourses = new HashMap<>();
+
+    public static Map<Student, Courses> getStudentsCourses() {
+        return studentsCourses;
+    }
+
+    public static int addStudent(String student) {
+        if (isPersonalDataValid(student)) {
+            System.out.println("The student has benn added.");
+            return 1;
+        }
+        return 0;
     }
 
     public static boolean isPersonalDataValid(String student) {
@@ -93,36 +92,27 @@ public class Main {
             System.out.println("This email is already taken.");
             return false;
         }
-        studentResultsMap.put(new Student(name, lastname, email), new Courses(0, 0, 0, 0));
+        studentsCourses.put(new Student(name, lastname, email), new Courses(0, 0, 0, 0));
         return true;
     }
 
     public static boolean isEmailUnique(String email) {
-        return studentResultsMap.keySet().stream()
+        return studentsCourses.keySet().stream()
                 .noneMatch(student -> student.getEmail().equals(email));
     }
 
     public static void showStudentsList() {
-        if (studentResultsMap.size() == 0) {
+        if (studentsCourses.size() == 0) {
             System.out.println("No students found");
         } else {
             System.out.println("Students: ");
-           studentResultsMap.keySet().forEach(System.out::println);
+            studentsCourses.keySet().forEach(System.out::println);
         }
     }
 
-    public static void addPoints() {
-        System.out.println("Enter an id and points or 'back' to return:");
-        boolean quit = false;
-        while (!quit) {
-            String inputPoints = scanner.nextLine().trim();
-            if ("back".equalsIgnoreCase(inputPoints)) {
-                quit = true;
-            } else {
-                if (isPointsValid(inputPoints)) {
-                    System.out.println("Points updated.");
-                }
-            }
+    public static void addPoints(String inputPoints) {
+        if (isPointsValid(inputPoints)) {
+            System.out.println("Points updated.");
         }
     }
 
@@ -145,32 +135,22 @@ public class Main {
             return false;
         }
         List<Integer> parsed = Arrays.stream(points).map(String::valueOf)
-                .map(Integer::parseInt)
-                .collect(Collectors.toList());
-        Courses courses = studentResultsMap.get(studentById);
+                .map(Integer::parseInt).toList();
+        Courses courses = studentsCourses.get(studentById);
         courses.updatePoints(parsed.get(0), parsed.get(1), parsed.get(2), parsed.get(3));
-        studentResultsMap.put(studentById, courses);
+        studentsCourses.put(studentById, courses);
         return true;
     }
 
-    public static void findStudent() {
-        System.out.println("Enter an id or 'back' to return:");
-        boolean quit = false;
-        while (!quit) {
-            String studentId = scanner.nextLine().trim();
-            if ("back".equalsIgnoreCase(studentId)) {
-                quit = true;
-            } else {
-                Student studentById = findStudentById(studentId);
-                Courses courses = studentResultsMap.get(studentById);
-                System.out.println(studentById == null ? "No student is found for id=" + studentId
-                        : studentId + courses);
-            }
-        }
+    public static void findStudent(String studentId) {
+        Student studentById = findStudentById(studentId);
+        Courses courses = studentsCourses.get(studentById);
+        System.out.println(studentById == null ? "No student is found for id=" + studentId
+                : studentId + courses);
     }
 
     public static Student findStudentById(String id) {
-        return studentResultsMap.keySet().stream()
+        return studentsCourses.keySet().stream()
                 .filter(student -> student.getId().equals(id))
                 .findFirst()
                 .orElse(null);
