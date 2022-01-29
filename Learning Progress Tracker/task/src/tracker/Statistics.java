@@ -1,6 +1,7 @@
 package tracker;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 
 public class Statistics {
@@ -29,16 +30,16 @@ public class Statistics {
 
     public void printCoursesInfo() {
         System.out.println(
-                "Most popular: \n" +
-                        "Least popular: DSA\n" +
-                        "Highest activity: Java\n" +
-                        "Lowest activity: DSA\n" +
-                        "Easiest course: Java\n" +
-                        "Hardest course: Spring");
+                "Most popular: " + mostPopular() +
+                        "\nLeast popular: " + leastPopular() +
+                        "\nHighest activity: Java" +
+                        "\nLowest activity: DSA" +
+                        "\nEasiest course: Java" +
+                        "\nHardest course: Spring");
     }
 
 
-    public String mostPopular() {
+    public List<CourseInfo> getCoursesInfoList() {
         int java = 0, dsa = 0, database = 0, spring = 0;
         for (Courses c : coursesMap.values()) {
             java += c.getJava();
@@ -46,20 +47,41 @@ public class Statistics {
             database += c.getDatabases();
             spring += c.getSpring();
         }
-        List<CourseInfo> infoList = new ArrayList<>(List.of(new CourseInfo("java", java),
-                new CourseInfo("dsa", dsa),
-                new CourseInfo(" database", database),
-                new CourseInfo("spring", spring)));
+        List<CourseInfo> infoList = new ArrayList<>(List.of(new CourseInfo("Java", java),
+                new CourseInfo("DSA", dsa),
+                new CourseInfo(" Database", database),
+                new CourseInfo("Spring", spring)));
 
-        infoList.stream().max(Comparator.comparingInt(CourseInfo::getParticipants));
-        return "";
+        infoList.forEach(System.out::println);
+        return infoList;
     }
 
+    public String mostPopular() {
+        List<CourseInfo> infoList = getCoursesInfoList();
+        int max = infoList.stream()
+                .mapToInt(CourseInfo::getParticipants)
+                .max()
+                .orElse(-1);
 
-//    public List<Courses> leastPopular() {
-//
-//    }
-//
+        return infoList.stream()
+                .filter(c -> c.getParticipants() == max)
+                .map(CourseInfo::getName)
+                .collect(Collectors.joining(", "));
+    }
+
+    public String leastPopular() {
+        List<CourseInfo> infoList = getCoursesInfoList();
+        int min = infoList.stream()
+                .mapToInt(CourseInfo::getParticipants)
+                .min()
+                .orElse(-1);
+
+      return infoList.stream()
+                .filter(c -> c.getParticipants() == min)
+                .map(CourseInfo::getName)
+                .collect(Collectors.joining(", "));
+    }
+
 //    public List<Courses> highestActivity() {
 //
 //    }
@@ -87,16 +109,20 @@ class CourseInfo {
         this.participants = participants;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
     public int getParticipants() {
         return participants;
     }
 
-    public void setParticipants(int participants) {
-        this.participants = participants;
+    public String getName() {
+        return name;
+    }
+
+    @Override
+    public String toString() {
+        return "CourseInfo{" +
+                "name='" + name + '\'' +
+                ", participants=" + participants +
+                '}';
     }
 }
 

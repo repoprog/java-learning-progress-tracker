@@ -23,6 +23,6 @@ public class Verifier {
     public boolean validatePoints(String[] points) {
         List<String> list = Arrays.asList(points);
         return list.stream().allMatch(s -> s.matches("\\d+"))
-                && list.stream().map(Integer::parseInt).allMatch(s -> s > 0);
+                && list.stream().map(Integer::parseInt).allMatch(s -> s >= 0);
     }
 }

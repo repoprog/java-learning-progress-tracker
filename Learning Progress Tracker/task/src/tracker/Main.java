@@ -134,8 +134,7 @@ public class Main {
             System.out.printf("No student is found for id=%s\n", studentId);
             return false;
         }
-        List<Integer> parsed = Arrays.stream(points).map(String::valueOf)
-                .map(Integer::parseInt).toList();
+        List<Integer> parsed = Arrays.stream(points).map(Integer::parseInt).toList();
         Courses courses = studentsCourses.get(studentById);
         courses.updatePoints(parsed.get(0), parsed.get(1), parsed.get(2), parsed.get(3));
         studentsCourses.put(studentById, courses);
