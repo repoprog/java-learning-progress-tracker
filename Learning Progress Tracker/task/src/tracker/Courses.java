@@ -1,17 +1,25 @@
 package tracker;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class Courses {
 
     private int java;
     private int DSA;
     private int databases;
     private int spring;
+    private static List<Courses> taskPoints = new ArrayList<>();
 
     public Courses(int java, int DSA, int databases, int spring) {
         this.java = java;
         this.DSA = DSA;
         this.databases = databases;
         this.spring = spring;
+    }
+
+    public static List<Courses> getTaskPoints() {
+        return taskPoints;
     }
 
     public int getJava() {
@@ -30,11 +38,13 @@ public class Courses {
         return spring;
     }
 
+
     public void updatePoints(int java, int dsa, int db, int spring) {
         this.java += java;
         this.DSA += dsa;
         this.databases += db;
         this.spring += spring;
+        taskPoints.add(new Courses(java, dsa, db, spring));
     }
 
     @Override
@@ -47,12 +57,4 @@ public class Courses {
     }
 }
 
-enum CompletionPoints {
-    JAVA(600),
-    DSA(400),
-    DATABASE(480),
-    SPRING(550);
 
-    CompletionPoints(int points) {
-    }
-}
