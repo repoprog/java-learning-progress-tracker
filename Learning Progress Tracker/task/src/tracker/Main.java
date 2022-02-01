@@ -1,5 +1,7 @@
 package tracker;
 
+import com.sun.source.tree.NewArrayTree;
+
 import java.util.*;
 
 public class Main {
@@ -7,6 +9,7 @@ public class Main {
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
         Statistics stats = new Statistics();
+        NotificationService service = new NotificationService();
         System.out.println("Learning Progress Tracker");
         boolean quit = false;
         while (!quit) {
@@ -16,13 +19,14 @@ public class Main {
                 case "add points" -> showSubMenu(action, "an id and points");
                 case "find" -> showSubMenu(action, "an id");
                 case "statistics" -> stats.chooseStats();
+                case "" -> System.out.println("No input.");
+                case "back" -> System.out.println("Enter 'exit' to exit the program");
+                case "list" -> showStudentsList();
+                case "notify" -> service.notifyStudent();
                 case "exit" -> {
                     quit = true;
                     System.out.println("Bye!");
                 }
-                case "" -> System.out.println("No input.");
-                case "back" -> System.out.println("Enter 'exit' to exit the program");
-                case "list" -> showStudentsList();
                 default -> System.out.println("Unknown command!");
             }
         }

@@ -1,6 +1,5 @@
 package tracker;
 
-import javax.annotation.processing.Completions;
 import java.util.*;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -11,8 +10,11 @@ public class Statistics {
     private final Map<Student, Courses> studentResultsMap = Main.getStudentsCourses();
     private final List<Courses> taskPointsList = Courses.getTaskPoints();
     private List<CourseInfo> activeParticipants;
-    private List<CourseInfo> averageDifficulty;
+    private List<String> mostPopularCurses;
+    private List<String> mostActive;
     private List<CourseInfo> taskCompletion;
+    private List<CourseInfo> averageDifficulty;
+
 
     Scanner scanner = new Scanner(System.in);
 
@@ -37,65 +39,36 @@ public class Statistics {
     }
 
     public void printCourseStatistics(String course) {
-
-        Map<String, Integer> courseResults = switch (course) {
-            case "JAVA" -> studentResultsMap.entrySet().stream()
-                    .filter(e -> e.getValue().getJava() > 0)
-                    .collect(Collectors.toMap(e -> e.getKey().getId(), e -> e.getValue().getJava()));
-            case "DSA" -> studentResultsMap.entrySet().stream()
-                    .filter(e -> e.getValue().getDSA() > 0)
-                    .collect(Collectors.toMap(e -> e.getKey().getId(), e -> e.getValue().getDSA()));
-            case "DATABASES" -> studentResultsMap.entrySet().stream()
-                    .filter(e -> e.getValue().getDatabases() > 0)
-                    .collect(Collectors.toMap(e -> e.getKey().getId(), e -> e.getValue().getDatabases()));
-            case "SPRING" -> studentResultsMap.entrySet().stream()
-                    .filter(e -> e.getValue().getSpring() > 0)
-                    .collect(Collectors.toMap(e -> e.getKey().getId(), e -> e.getValue().getSpring()));
-            default -> new HashMap<>();
-        };
-
-        Map<String, Integer> sorted = courseResults.entrySet().stream()
-                .sorted(Map.Entry.<String, Integer>comparingByValue()
-                        .thenComparing(Map.Entry.comparingByKey()))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
-                        (e1, e2) -> e1, LinkedHashMap::new));
-
+        Map<String, Integer> statsSorted = generateStatistics(course);
         System.out.println(course);
         System.out.println("id    points    completed");
-        sorted.forEach((k, v) ->
-                System.out.printf("%s %d        %.1f%%\n", k, v, calculateCompletion(v, CompletionPoints.valueOf(course))));
+        statsSorted.forEach((k, v) -> System.out.printf("%s %d        %.1f%%\n",
+                k, v, calculateCompletion(v, course)));
     }
 
     public void printCoursesInfo() {
-        if (taskPointsList.size() == 0) {
-            System.out.println("""
-                    Most popular: n/a\s
-                    Least popular: n/a
-                    Highest activity: n/a
-                    Lowest activity: n/a
-                    Easiest course: n/a
-                    Hardest course: n/a""");
-        } else {
-            System.out.println("Most popular: " + mostPopular() +
-                    "\nLeast popular: " + leastPopular() +
-                    "\nHighest activity: " + highestActivity() +
-                    "\nLowest activity: " + lowestActivity() +
-                    "\nEasiest course:" + easiest() +
-                    "\nHardest course:" + hardest());
-        }
+        String most = mostPopular().isEmpty() ? "n/a" : mostPopular();
+        String least = leastPopular().isEmpty() ? "n/a" : leastPopular();
+        String highest = highestActivity().isEmpty() ? "n/a" : highestActivity();
+        String lowest = lowestActivity().isEmpty() ? "n/a" : highestActivity();
+        String easiest = easiest().isEmpty() ? "n/a" : easiest();
+        String hardest = hardest().isEmpty() ? "n/a" : hardest();
+        System.out.println("Most popular: " + most +
+                "\nLeast popular: " + least +
+                "\nHighest activity: " + highest +
+                "\nLowest activity: " + lowest +
+                "\nEasiest course:" + easiest +
+                "\nHardest course:" + hardest);
     }
+
 
     public List<CourseInfo> getCoursesInfoList(List<Courses> courses) {
         int java = 0, dsa = 0, database = 0, spring = 0;
         for (Courses c : courses) {
             if (c.getJava() != 0) java += 1;
-
             if (c.getDSA() != 0) dsa += 1;
-
             if (c.getDatabases() != 0) database += 1;
-
             if (c.getSpring() != 0) spring += 1;
-
         }
 
         return new ArrayList<>(List.of(
@@ -106,30 +79,36 @@ public class Statistics {
     }
 
     public String mostPopular() {
-        return getBestCurses(activeParticipants);
+        mostPopularCurses = getBestCurses(activeParticipants);
+        return String.join(", ", mostPopularCurses);
     }
 
     public String leastPopular() {
-        return getWorstCourses(activeParticipants);
+        List<String> leastPopularCourses = getWorstCourses(activeParticipants);
+        leastPopularCourses.removeAll(mostPopularCurses);
+        return String.join(", ", leastPopularCourses);
     }
 
     public String highestActivity() {
-        return getBestCurses(taskCompletion);
+        mostActive = getBestCurses(taskCompletion);
+        return String.join(", ", mostActive);
     }
 
     public String lowestActivity() {
-        return getWorstCourses(taskCompletion);
+        List<String> lowActivity = getWorstCourses(taskCompletion);
+        lowActivity.removeAll(mostActive);
+        return String.join(", ", lowActivity);
     }
 
     public String easiest() {
-        return getBestCurses(averageDifficulty);
+        return String.join(", ", getBestCurses(averageDifficulty));
     }
 
     public String hardest() {
-        return getWorstCourses(averageDifficulty);
+        return String.join(", ", getWorstCourses(averageDifficulty));
     }
 
-    public String getBestCurses(List<CourseInfo> list) {
+    public List<String> getBestCurses(List<CourseInfo> list) {
         double max = list.stream()
                 .mapToDouble(CourseInfo::getPoints)
                 .max()
@@ -138,10 +117,10 @@ public class Statistics {
         return list.stream()
                 .filter(c -> c.getPoints() == max & c.getPoints() != 0)
                 .map(CourseInfo::getName)
-                .collect(Collectors.joining(", "));
+                .collect(Collectors.toList());
     }
 
-    public String getWorstCourses(List<CourseInfo> list) {
+    public List<String> getWorstCourses(List<CourseInfo> list) {
         double min = list.stream()
                 .mapToDouble(CourseInfo::getPoints)
                 .min()
@@ -150,7 +129,7 @@ public class Statistics {
         return list.stream()
                 .filter(c -> c.getPoints() == min & c.getPoints() != 0)
                 .map(CourseInfo::getName)
-                .collect(Collectors.joining(", "));
+                .collect(Collectors.toList());
     }
 
     public List<CourseInfo> getAverageDifficulty() {
@@ -178,7 +157,6 @@ public class Statistics {
                 .average()
                 .orElse(0);
 
-        System.out.printf(" Avarages: Java: %f DSA: %f DataBase: %f Spring: %f,", java, dsa, database, spring);
         return new ArrayList<>(List.of(
                 new CourseInfo("Java", java),
                 new CourseInfo("DSA", dsa),
@@ -186,11 +164,34 @@ public class Statistics {
                 new CourseInfo("Spring", spring)));
     }
 
-    public double calculateCompletion(int points, CompletionPoints course) {
-        return points * 100 / (double) course.getValue();
+    public Map<String, Integer> generateStatistics(String course) {
+        Map<String, Integer> courseResults = switch (course) {
+            case "JAVA" -> studentResultsMap.entrySet().stream()
+                    .filter(e -> e.getValue().getJava() > 0)
+                    .collect(Collectors.toMap(e -> e.getKey().getId(), e -> e.getValue().getJava()));
+            case "DSA" -> studentResultsMap.entrySet().stream()
+                    .filter(e -> e.getValue().getDSA() > 0)
+                    .collect(Collectors.toMap(e -> e.getKey().getId(), e -> e.getValue().getDSA()));
+            case "DATABASES" -> studentResultsMap.entrySet().stream()
+                    .filter(e -> e.getValue().getDatabases() > 0)
+                    .collect(Collectors.toMap(e -> e.getKey().getId(), e -> e.getValue().getDatabases()));
+            case "SPRING" -> studentResultsMap.entrySet().stream()
+                    .filter(e -> e.getValue().getSpring() > 0)
+                    .collect(Collectors.toMap(e -> e.getKey().getId(), e -> e.getValue().getSpring()));
+            default -> new HashMap<>();
+        };
+
+        return courseResults.entrySet().stream()
+                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed()
+                        .thenComparing(Map.Entry.comparingByKey()))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
+                        (e1, e2) -> e1, LinkedHashMap::new));
+    }
+
+    public double calculateCompletion(int points, String course) {
+        return points * 100 / (double) CompletionPoints.valueOf(course).getValue();
     }
 }
-
 
 enum CompletionPoints {
     JAVA(600),
@@ -198,7 +199,7 @@ enum CompletionPoints {
     DATABASES(480),
     SPRING(550);
 
-    public int value;
+    public final int value;
 
     CompletionPoints(int value) {
         this.value = value;
@@ -208,7 +209,6 @@ enum CompletionPoints {
         return value;
     }
 }
-
 
 class CourseInfo {
     private final String name;
@@ -225,11 +225,6 @@ class CourseInfo {
 
     public String getName() {
         return name;
-    }
-
-    @Override
-    public String toString() {
-        return "CourseInfo{" + "name='" + name + '\'' + ", points=" + points + '}';
     }
 }
 
